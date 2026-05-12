@@ -1,0 +1,45 @@
+[project]
+name = "url2obsidian"
+version = "0.1.0"
+description = "Share URLs from iPhone to Obsidian via Raindrop.io inbox"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "jinja2>=3.1",
+    "typer>=0.12",
+    "keyring>=25",
+    "playwright>=1.45",
+    "structlog>=24",
+    "pyobjc-framework-Cocoa>=10; platform_system == 'Darwin'",
+]
+
+[project.scripts]
+url2obsidian = "url2obsidian.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/url2obsidian"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "respx>=0.21",
+    "ruff>=0.6",
+    "ty>=0.0.1a0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
