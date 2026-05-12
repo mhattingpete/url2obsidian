@@ -12,7 +12,6 @@ author: "{{ author }}"
 published: "{{ published }}"
 site: "{{ site }}"
 clipped: "{{ clipped }}"
-raindrop_id: {{ raindrop_id }}
 tags: [{{ tags }}]
 ---
 
@@ -31,7 +30,6 @@ def render(article: Article, meta: ItemMeta, clipped_at: datetime) -> str:
         published=_iso_date(article.published),
         site=_escape(article.site_name),
         clipped=clipped_at.isoformat(),
-        raindrop_id=meta.raindrop_id,
         tags=", ".join(tags),
         body=article.content_markdown,
     )

@@ -16,12 +16,9 @@ def test_render_matches_golden():
         site_name="example.com",
     )
     meta = ItemMeta(
-        raindrop_id=42,
         source_url="https://example.com/post",
-        raindrop_title="Hello World",
-        raindrop_excerpt="",
+        received_at=datetime(2026, 5, 12, tzinfo=UTC),
         tags=("from-phone",),
-        created=datetime(2026, 5, 12, tzinfo=UTC),
     )
     fixed_clipped_at = datetime(2026, 5, 12, 10, 0, tzinfo=UTC)
     rendered = render(article, meta, clipped_at=fixed_clipped_at)
@@ -38,12 +35,9 @@ def test_render_handles_missing_published():
         site_name="example.com",
     )
     meta = ItemMeta(
-        raindrop_id=1,
         source_url="https://x",
-        raindrop_title="No Date",
-        raindrop_excerpt="",
+        received_at=datetime(2026, 5, 12, tzinfo=UTC),
         tags=(),
-        created=datetime(2026, 5, 12, tzinfo=UTC),
     )
     out = render(article, meta, clipped_at=datetime(2026, 5, 12, 10, 0, tzinfo=UTC))
     assert 'published: ""' in out or "published:" not in out

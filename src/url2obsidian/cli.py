@@ -3,24 +3,20 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
-import keyring
 import structlog
 import typer
 
-from url2obsidian.config import DEFAULT_CONFIG_PATH, Config, load_config
+from url2obsidian.config import DEFAULT_CONFIG_PATH, DEFAULT_INBOX_DIR, Config, load_config
 from url2obsidian.extractor import DefuddleExtractor
 from url2obsidian.fetcher import PlaywrightBrowser, TwoTierFetcher
-from url2obsidian.models import ItemMeta
-from url2obsidian.raindrop_client import RaindropClient
+from url2obsidian.inbox import FileInbox
+from url2obsidian.models import Item, ItemMeta
 from url2obsidian.renderer import render
 from url2obsidian.vault import FileVaultWriter
 from url2obsidian.worker import run_once as worker_run_once
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 log = structlog.get_logger("url2obsidian.cli")
-
-_KEYRING_SERVICE = "url2obsidian"
-_KEYRING_USER = "raindrop-token"
 
 
 def _cli_path() -> Path:
@@ -38,20 +34,8 @@ def _cli_path() -> Path:
 
 def _build(
     config: Config,
-) -> tuple[RaindropClient, TwoTierFetcher, DefuddleExtractor, FileVaultWriter]:
-    token = keyring.get_password(_KEYRING_SERVICE, _KEYRING_USER)
-    if not token:
-        typer.echo(
-            "No Raindrop token in keychain. Run `url2obsidian configure` first.",
-            err=True,
-        )
-        raise typer.Exit(2)
-    api = RaindropClient(
-        token=token,
-        inbox_collection=config.inbox_collection,
-        clipped_collection=config.clipped_collection,
-        failed_collection=config.failed_collection,
-    )
+) -> tuple[FileInbox, TwoTierFetcher, DefuddleExtractor, FileVaultWriter]:
+    inbox = FileInbox(inbox_dir=config.inbox_dir)
     fetcher = TwoTierFetcher(browser=PlaywrightBrowser())
     extractor = DefuddleExtractor(cli_path=_cli_path())
     vault = FileVaultWriter(
@@ -59,25 +43,39 @@ def _build(
         clippings_subdir=config.clippings_subdir,
         download_images=config.download_images,
     )
-    return api, fetcher, extractor, vault
+    return inbox, fetcher, extractor, vault
 
 
 @app.command()
-def configure() -> None:
-    """Store a Raindrop token in the macOS Keychain and seed the config file."""
-    token = typer.prompt("Raindrop personal access token", hide_input=True)
-    keyring.set_password(_KEYRING_SERVICE, _KEYRING_USER, token)
-    typer.echo("Token stored in Keychain.")
+def init() -> None:
+    """Create the iCloud inbox directory + config file, and print Shortcut setup steps."""
+    DEFAULT_INBOX_DIR.mkdir(parents=True, exist_ok=True)
+    inbox_file = DEFAULT_INBOX_DIR / "inbox.txt"
+    if not inbox_file.exists():
+        inbox_file.touch()
+    typer.echo(f"Inbox directory: {DEFAULT_INBOX_DIR}")
+    typer.echo("  inbox.txt    -> Shortcut appends URLs here")
+    typer.echo("  processed.log -> successful clippings (audit)")
+    typer.echo("  failed.log   -> failed URLs with reason (audit)")
 
     if not DEFAULT_CONFIG_PATH.exists():
         DEFAULT_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         DEFAULT_CONFIG_PATH.write_text(_DEFAULT_CONFIG_TEMPLATE)
-        typer.echo(f"Wrote config template to {DEFAULT_CONFIG_PATH}")
-        typer.echo("Edit it to point at your vault, then re-run.")
+        typer.echo(f"\nWrote config template to {DEFAULT_CONFIG_PATH}")
+        typer.echo("Edit vault_path to point at your Obsidian vault.")
     else:
-        typer.echo(f"Config already exists at {DEFAULT_CONFIG_PATH}; left untouched.")
+        typer.echo(f"\nConfig already exists at {DEFAULT_CONFIG_PATH}; left untouched.")
 
-    typer.echo("\nTo install the launchd agent:")
+    typer.echo("\n--- iOS Shortcut setup ---")
+    typer.echo("1. iPhone: Shortcuts app -> + (new) -> name it 'Save to Obsidian'.")
+    typer.echo("2. Add action: 'Get URLs from Input' (Receive: URLs and Text from Share Sheet).")
+    typer.echo("3. Add action: 'Text' with content: [URL from previous step] + newline.")
+    typer.echo("4. Add action: 'Append to Text File' -> file picker ->")
+    typer.echo("   iCloud Drive/url2obsidian/inbox.txt -> Append, with line break.")
+    typer.echo("5. Shortcut settings: 'Show in Share Sheet' ON.")
+    typer.echo("6. Test by sharing a URL from Safari.\n")
+
+    typer.echo("To install the launchd agent:")
     typer.echo(
         "  cp packaging/com.mhattingpete.url2obsidian.plist.template "
         "~/Library/LaunchAgents/com.mhattingpete.url2obsidian.plist"
@@ -86,21 +84,30 @@ def configure() -> None:
     typer.echo("  launchctl load ~/Library/LaunchAgents/com.mhattingpete.url2obsidian.plist")
 
 
+@app.command()
+def enqueue(url: str) -> None:
+    """Manually append a URL to the inbox (testing convenience; bypasses iOS)."""
+    config = load_config()
+    inbox = FileInbox(inbox_dir=config.inbox_dir)
+    inbox.enqueue(url)
+    typer.echo(f"Enqueued: {url}")
+
+
 @app.command("run-once")
 def run_once_cmd() -> None:
     config = load_config()
-    api, fetcher, extractor, vault = _build(config)
-    worker_run_once(api, fetcher, extractor, vault)
+    inbox, fetcher, extractor, vault = _build(config)
+    worker_run_once(inbox, fetcher, extractor, vault)
 
 
 @app.command()
 def daemon() -> None:
     config = load_config()
-    api, fetcher, extractor, vault = _build(config)
+    inbox, fetcher, extractor, vault = _build(config)
     log.info("daemon_start", interval=config.poll_interval_seconds)
     while True:
         try:
-            worker_run_once(api, fetcher, extractor, vault)
+            worker_run_once(inbox, fetcher, extractor, vault)
         except Exception as e:
             log.error("run_failed", error=str(e))
         time.sleep(config.poll_interval_seconds)
@@ -108,7 +115,7 @@ def daemon() -> None:
 
 @app.command()
 def clip(url: str) -> None:
-    """Clip a single URL directly to the vault, bypassing Raindrop."""
+    """Clip a single URL directly to the vault, bypassing the inbox."""
     config = load_config()
     fetcher = TwoTierFetcher(browser=PlaywrightBrowser())
     extractor = DefuddleExtractor(cli_path=_cli_path())
@@ -127,14 +134,8 @@ def clip(url: str) -> None:
         )
         raise typer.Exit(1)
 
-    meta = ItemMeta(
-        raindrop_id=0,
-        source_url=url,
-        raindrop_title=article.title,
-        raindrop_excerpt="",
-        tags=("manual",),
-        created=datetime.now(UTC),
-    )
+    item = Item(url=url, received_at=datetime.now(UTC))
+    meta = ItemMeta.from_item(item)
     final = render(article, meta, clipped_at=datetime.now(UTC))
     article_with_fm = replace(article, content_markdown=final)
     path = vault.write(article_with_fm, meta)
@@ -142,11 +143,8 @@ def clip(url: str) -> None:
 
 
 _DEFAULT_CONFIG_TEMPLATE = """\
-vault_path          = "/Users/CHANGEME/Obsidian/MainVault"
-clippings_subdir    = "Clippings"
-inbox_collection    = "Unclipped"
-clipped_collection  = "Clipped"
-failed_collection   = "Failed"
+vault_path            = "/Users/CHANGEME/Documents/Obsidian Vault"
+clippings_subdir      = "Clippings"
 poll_interval_seconds = 300
 download_images       = true
 notification_on_error = true

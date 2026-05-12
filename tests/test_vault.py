@@ -9,14 +9,11 @@ from url2obsidian.models import Article, ItemMeta
 from url2obsidian.vault import FileVaultWriter, slugify
 
 
-def _meta(rid: int = 1) -> ItemMeta:
+def _meta() -> ItemMeta:
     return ItemMeta(
-        raindrop_id=rid,
         source_url="https://example.com/post",
-        raindrop_title="A",
-        raindrop_excerpt="",
+        received_at=datetime(2026, 5, 12, 10, 0, tzinfo=UTC),
         tags=("from-phone",),
-        created=datetime(2026, 5, 12, 10, 0, tzinfo=UTC),
     )
 
 
@@ -59,9 +56,9 @@ def test_write_collision_appends_suffix(tmp_path: Path):
     writer = FileVaultWriter(
         vault_path=tmp_path, clippings_subdir="Clippings", download_images=False
     )
-    p1 = writer.write(_article("Same Title"), _meta(rid=1))
-    p2 = writer.write(_article("Same Title"), _meta(rid=2))
-    p3 = writer.write(_article("Same Title"), _meta(rid=3))
+    p1 = writer.write(_article("Same Title"), _meta())
+    p2 = writer.write(_article("Same Title"), _meta())
+    p3 = writer.write(_article("Same Title"), _meta())
     assert p1.name == "same-title.md"
     assert p2.name == "same-title-2.md"
     assert p3.name == "same-title-3.md"
@@ -71,10 +68,10 @@ def test_write_collision_gives_up_after_ten(tmp_path: Path):
     writer = FileVaultWriter(
         vault_path=tmp_path, clippings_subdir="Clippings", download_images=False
     )
-    for i in range(10):
-        writer.write(_article("Dup"), _meta(rid=i))
+    for _ in range(10):
+        writer.write(_article("Dup"), _meta())
     with pytest.raises(RuntimeError, match="naming"):
-        writer.write(_article("Dup"), _meta(rid=99))
+        writer.write(_article("Dup"), _meta())
 
 
 def test_write_downloads_images_when_enabled(tmp_path: Path):

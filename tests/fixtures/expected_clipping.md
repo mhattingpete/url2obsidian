@@ -5,7 +5,6 @@ author: "Jane Doe"
 published: "2026-04-01"
 site: "example.com"
 clipped: "2026-05-12T10:00:00+00:00"
-raindrop_id: 42
 tags: [clippings, from-phone]
 ---
 

@@ -2,17 +2,17 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from url2obsidian.models import Article, FetchResult, Item, ItemMeta
-from url2obsidian.protocols import Extractor, Fetcher, RaindropAPI, VaultWriter
+from url2obsidian.protocols import Extractor, Fetcher, Inbox, VaultWriter
 
 
-class _RaindropImpl:
-    def list_unclipped(self) -> Iterable[Item]:
+class _InboxImpl:
+    def list_pending(self) -> Iterable[Item]:
         return []
 
-    def mark_clipped(self, item_id: int, tag: str) -> None:
+    def mark_clipped(self, item: Item, clipped_path: Path) -> None:
         pass
 
-    def mark_failed(self, item_id: int, reason: str) -> None:
+    def mark_failed(self, item: Item, reason: str) -> None:
         pass
 
 
@@ -32,7 +32,7 @@ class _VaultImpl:
 
 
 def test_implementations_satisfy_protocols():
-    assert isinstance(_RaindropImpl(), RaindropAPI)
+    assert isinstance(_InboxImpl(), Inbox)
     assert isinstance(_FetcherImpl(), Fetcher)
     assert isinstance(_ExtractorImpl(), Extractor)
     assert isinstance(_VaultImpl(), VaultWriter)

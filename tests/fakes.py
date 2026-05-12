@@ -5,20 +5,20 @@ from pathlib import Path
 from url2obsidian.models import Article, FetchResult, Item, ItemMeta
 
 
-class FakeRaindrop:
+class FakeInbox:
     def __init__(self, items: list[Item]) -> None:
         self.items = items
-        self.clipped: list[tuple[int, str]] = []
-        self.failed: list[tuple[int, str]] = []
+        self.clipped: list[tuple[Item, Path]] = []
+        self.failed: list[tuple[Item, str]] = []
 
-    def list_unclipped(self) -> Iterable[Item]:
+    def list_pending(self) -> Iterable[Item]:
         yield from self.items
 
-    def mark_clipped(self, item_id: int, tag: str) -> None:
-        self.clipped.append((item_id, tag))
+    def mark_clipped(self, item: Item, clipped_path: Path) -> None:
+        self.clipped.append((item, clipped_path))
 
-    def mark_failed(self, item_id: int, reason: str) -> None:
-        self.failed.append((item_id, reason))
+    def mark_failed(self, item: Item, reason: str) -> None:
+        self.failed.append((item, reason))
 
 
 class FakeFetcher:
@@ -51,28 +51,18 @@ class FakeVault:
         self.written: list[Path] = []
 
     def write(self, article: Article, meta: ItemMeta) -> Path:
-        target = self.tmp / f"{meta.raindrop_id}.md"
+        # Use a hash-stable counter-based name since the new model has no id.
+        target = self.tmp / f"clip-{len(self.written)}.md"
         target.write_text(article.content_markdown)
         self.written.append(target)
         return target
 
 
-def make_item(rid: int, url: str = "https://example.com/x") -> Item:
-    return Item(
-        id=rid,
-        url=url,
-        title=f"item-{rid}",
-        excerpt="",
-        tags=("from-phone",),
-        created=datetime(2026, 5, 12, tzinfo=UTC),
-    )
+def make_item(url: str = "https://example.com/x") -> Item:
+    return Item(url=url, received_at=datetime(2026, 5, 12, tzinfo=UTC))
 
 
 def make_article(content: str = "hi") -> Article:
     return Article(
-        title="t",
-        byline="",
-        content_markdown=content,
-        published=None,
-        site_name="example.com",
+        title="t", byline="", content_markdown=content, published=None, site_name="example.com"
     )

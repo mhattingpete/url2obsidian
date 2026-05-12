@@ -5,33 +5,24 @@ from typing import Literal
 
 @dataclass(frozen=True, slots=True)
 class Item:
-    id: int
+    """A URL queued for clipping. The inbox supplies these; downstream code
+    uses `url` to fetch and `received_at` for provenance."""
+
     url: str
-    title: str
-    excerpt: str
-    tags: tuple[str, ...]
-    created: datetime
+    received_at: datetime
 
 
 @dataclass(frozen=True, slots=True)
 class ItemMeta:
-    raindrop_id: int
+    """Provenance for a clipping, written into the markdown frontmatter."""
+
     source_url: str
-    raindrop_title: str
-    raindrop_excerpt: str
-    tags: tuple[str, ...]
-    created: datetime
+    received_at: datetime
+    tags: tuple[str, ...] = ("from-phone",)
 
     @classmethod
     def from_item(cls, item: Item) -> "ItemMeta":
-        return cls(
-            raindrop_id=item.id,
-            source_url=item.url,
-            raindrop_title=item.title,
-            raindrop_excerpt=item.excerpt,
-            tags=item.tags,
-            created=item.created,
-        )
+        return cls(source_url=item.url, received_at=item.received_at)
 
 
 @dataclass(frozen=True, slots=True)
