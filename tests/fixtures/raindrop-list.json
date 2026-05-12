@@ -1,0 +1,22 @@
+{
+  "result": true,
+  "items": [
+    {
+      "_id": 111,
+      "link": "https://example.com/a",
+      "title": "A",
+      "excerpt": "",
+      "tags": ["from-phone"],
+      "created": "2026-05-12T09:00:00.000Z"
+    },
+    {
+      "_id": 112,
+      "link": "https://example.com/b",
+      "title": "B",
+      "excerpt": "",
+      "tags": [],
+      "created": "2026-05-12T09:01:00.000Z"
+    }
+  ],
+  "count": 2
+}
