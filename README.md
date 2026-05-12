@@ -33,11 +33,28 @@ Edit the config to point at your Obsidian vault.
 
 On iPhone, Shortcuts app → **+** → name it "Save to Obsidian":
 
-1. Action: **Get URLs from Input** (Receive: URLs and Text from Share Sheet)
-2. Action: **Text** — set content to the URL variable, then a newline
-3. Action: **Append to Text File** — pick `iCloud Drive/url2obsidian/inbox.txt`, mode "Append", with line break
+1. Open settings (the **`ⓘ`** icon) → toggle **"Show in Share Sheet"** ON.
+2. Add **one** action: **Append to Text File**.
+   - **File**: iCloud Drive → Shortcuts → `url2obsidian` → `inbox.txt`
+   - **Text**: tap the field, then the **Shortcut Input** magic-variable chip.
+   - **Append**: ON. **Line break**: Append.
+3. Save. Share a URL from Safari → pick **Save to Obsidian**.
 
-In Shortcut settings, enable **Show in Share Sheet**.
+#### Path gotcha
+
+iOS Shortcuts' file picker shows two iCloud locations that look similar:
+
+- **`iCloud Drive/Shortcuts/url2obsidian/`** — the Shortcuts app's own iCloud
+  container. This is where "Append to Text File" naturally writes. On macOS
+  it's at `~/Library/Mobile Documents/iCloud~is~workflow~my~workflows/Documents/url2obsidian/`.
+  **This is the default `inbox_dir` and what you should use.**
+- **`iCloud Drive/url2obsidian/`** — top-level iCloud Drive folder. Works too
+  but requires extra navigation in the Shortcut's file picker. On macOS at
+  `~/Library/Mobile Documents/com~apple~CloudDocs/url2obsidian/`. If you
+  prefer this, set `inbox_dir` in `config.toml` accordingly.
+
+Double-check the filename spelling in the picker — `inbox.txt`, not `indbox.txt`.
+A typo there silently sends URLs to a file the worker doesn't read.
 
 ### Launchd
 

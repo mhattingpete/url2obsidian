@@ -4,7 +4,13 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 DEFAULT_CONFIG_PATH = Path.home() / ".config" / "url2obsidian" / "config.toml"
-DEFAULT_INBOX_DIR = Path.home() / "Library/Mobile Documents/com~apple~CloudDocs/url2obsidian"
+# iOS Shortcuts' "Append to Text File" action writes into the Shortcuts app's
+# own iCloud container by default, not the main iCloud Drive folder. Matching
+# that path here removes a setup gotcha. It still syncs through iCloud and is
+# visible in Finder under iCloud Drive -> Shortcuts -> url2obsidian.
+DEFAULT_INBOX_DIR = (
+    Path.home() / "Library/Mobile Documents/iCloud~is~workflow~my~workflows/Documents/url2obsidian"
+)
 
 
 class Config(BaseModel):

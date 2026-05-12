@@ -68,12 +68,15 @@ def init() -> None:
 
     typer.echo("\n--- iOS Shortcut setup ---")
     typer.echo("1. iPhone: Shortcuts app -> + (new) -> name it 'Save to Obsidian'.")
-    typer.echo("2. Add action: 'Get URLs from Input' (Receive: URLs and Text from Share Sheet).")
-    typer.echo("3. Add action: 'Text' with content: [URL from previous step] + newline.")
-    typer.echo("4. Add action: 'Append to Text File' -> file picker ->")
-    typer.echo("   iCloud Drive/url2obsidian/inbox.txt -> Append, with line break.")
-    typer.echo("5. Shortcut settings: 'Show in Share Sheet' ON.")
-    typer.echo("6. Test by sharing a URL from Safari.\n")
+    typer.echo("2. Open settings (i): toggle 'Show in Share Sheet' ON.")
+    typer.echo("3. Add ONE action: 'Append to Text File'.")
+    typer.echo("   - File: iCloud Drive -> Shortcuts -> url2obsidian -> inbox.txt")
+    typer.echo("     (NOT the top-level iCloud Drive/url2obsidian -- iOS writes")
+    typer.echo("      into the Shortcuts app's own container by default.)")
+    typer.echo("   - Text: tap the field, then the 'Shortcut Input' magic variable.")
+    typer.echo("   - Append: ON. Line break: Append.")
+    typer.echo("4. Save. Share a URL from Safari -> 'Save to Obsidian'.")
+    typer.echo("5. Spell-check the filename in the picker -- 'inbox.txt' not 'indbox.txt'.\n")
 
     typer.echo("To install the launchd agent:")
     typer.echo(
