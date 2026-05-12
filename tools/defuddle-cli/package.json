@@ -1,0 +1,9 @@
+{
+  "name": "defuddle-cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pinned defuddle dependency. The Python extractor invokes ./node_modules/.bin/defuddle directly.",
+  "dependencies": {
+    "defuddle": "^0.18.1"
+  }
+}
