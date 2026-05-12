@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import httpx
 import structlog
@@ -29,9 +29,7 @@ def _process_one(item, api, fetcher, extractor, vault) -> None:
         fetched = fetcher.fetch(item.url)
     except httpx.HTTPStatusError as e:
         reason = f"http-{e.response.status_code}"
-        log.warning(
-            "fetch_http_error", id=item.id, url=item.url, status=e.response.status_code
-        )
+        log.warning("fetch_http_error", id=item.id, url=item.url, status=e.response.status_code)
         api.mark_failed(item.id, reason)
         return
     except httpx.HTTPError:
@@ -52,7 +50,7 @@ def _process_one(item, api, fetcher, extractor, vault) -> None:
         return
 
     meta = ItemMeta.from_item(item)
-    clipped_at = datetime.now(timezone.utc)
+    clipped_at = datetime.now(UTC)
     final_md = render(article, meta, clipped_at=clipped_at)
     article_with_fm = replace(article, content_markdown=final_md)
 

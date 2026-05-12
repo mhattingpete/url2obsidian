@@ -19,9 +19,7 @@ class FakeBrowser:
 @respx.mock
 def test_httpx_path_when_response_is_large_html():
     big_html = "<html><body>" + ("x" * 3000) + "</body></html>"
-    respx.get("https://example.com/a").mock(
-        return_value=httpx.Response(200, html=big_html)
-    )
+    respx.get("https://example.com/a").mock(return_value=httpx.Response(200, html=big_html))
     browser = FakeBrowser()
     f = TwoTierFetcher(browser=browser, min_html_bytes=2048)
     r = f.fetch("https://example.com/a")

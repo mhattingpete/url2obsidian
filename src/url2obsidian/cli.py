@@ -1,6 +1,6 @@
 import time
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import keyring
@@ -133,15 +133,15 @@ def clip(url: str) -> None:
         raindrop_title=article.title,
         raindrop_excerpt="",
         tags=("manual",),
-        created=datetime.now(timezone.utc),
+        created=datetime.now(UTC),
     )
-    final = render(article, meta, clipped_at=datetime.now(timezone.utc))
+    final = render(article, meta, clipped_at=datetime.now(UTC))
     article_with_fm = replace(article, content_markdown=final)
     path = vault.write(article_with_fm, meta)
     typer.echo(f"Wrote {path}")
 
 
-_DEFAULT_CONFIG_TEMPLATE = '''\
+_DEFAULT_CONFIG_TEMPLATE = """\
 vault_path          = "/Users/CHANGEME/Obsidian/MainVault"
 clippings_subdir    = "Clippings"
 inbox_collection    = "Unclipped"
@@ -150,7 +150,7 @@ failed_collection   = "Failed"
 poll_interval_seconds = 300
 download_images       = true
 notification_on_error = true
-'''
+"""
 
 
 if __name__ == "__main__":

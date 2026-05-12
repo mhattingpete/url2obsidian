@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -16,7 +16,7 @@ def _meta(rid: int = 1) -> ItemMeta:
         raindrop_title="A",
         raindrop_excerpt="",
         tags=("from-phone",),
-        created=datetime(2026, 5, 12, 10, 0, tzinfo=timezone.utc),
+        created=datetime(2026, 5, 12, 10, 0, tzinfo=UTC),
     )
 
 
@@ -109,9 +109,7 @@ def test_write_image_download_failure_is_non_fatal(tmp_path: Path):
         site_name="example.com",
     )
     with respx.mock:
-        respx.get("https://img.example.com/missing.png").mock(
-            return_value=httpx.Response(404)
-        )
+        respx.get("https://img.example.com/missing.png").mock(return_value=httpx.Response(404))
         writer = FileVaultWriter(
             vault_path=tmp_path, clippings_subdir="Clippings", download_images=True
         )

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from url2obsidian.models import Article, FetchResult, Item, ItemMeta
 
@@ -10,7 +10,7 @@ def test_item_is_frozen():
         title="A",
         excerpt="ex",
         tags=("from-phone",),
-        created=datetime(2026, 5, 12, tzinfo=timezone.utc),
+        created=datetime(2026, 5, 12, tzinfo=UTC),
     )
     try:
         item.id = 2  # type: ignore[misc]
@@ -27,7 +27,7 @@ def test_item_meta_derives_from_item():
         title="raw title",
         excerpt="",
         tags=("from-phone",),
-        created=datetime(2026, 5, 12, tzinfo=timezone.utc),
+        created=datetime(2026, 5, 12, tzinfo=UTC),
     )
     meta = ItemMeta.from_item(item)
     assert meta.raindrop_id == 42

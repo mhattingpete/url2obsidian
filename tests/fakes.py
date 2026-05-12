@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from url2obsidian.models import Article, FetchResult, Item, ItemMeta
@@ -64,7 +64,7 @@ def make_item(rid: int, url: str = "https://example.com/x") -> Item:
         title=f"item-{rid}",
         excerpt="",
         tags=("from-phone",),
-        created=datetime(2026, 5, 12, tzinfo=timezone.utc),
+        created=datetime(2026, 5, 12, tzinfo=UTC),
     )
 
 

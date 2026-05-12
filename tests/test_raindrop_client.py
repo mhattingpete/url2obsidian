@@ -23,9 +23,7 @@ def test_list_unclipped_returns_items_from_inbox_collection():
     respx.get(f"{RAINDROP_BASE}/collections").mock(
         return_value=httpx.Response(
             200,
-            json=_collections_response(
-                {"Unclipped": 7001, "Clipped": 7002, "Failed": 7003}
-            ),
+            json=_collections_response({"Unclipped": 7001, "Clipped": 7002, "Failed": 7003}),
         )
     )
     items_payload = json.loads((FIXTURES / "raindrop-list.json").read_text())
@@ -50,9 +48,7 @@ def test_mark_clipped_moves_item_to_clipped_collection():
     respx.get(f"{RAINDROP_BASE}/collections").mock(
         return_value=httpx.Response(
             200,
-            json=_collections_response(
-                {"Unclipped": 7001, "Clipped": 7002, "Failed": 7003}
-            ),
+            json=_collections_response({"Unclipped": 7001, "Clipped": 7002, "Failed": 7003}),
         )
     )
     route = respx.put(f"{RAINDROP_BASE}/raindrop/123").mock(
@@ -74,9 +70,7 @@ def test_mark_clipped_moves_item_to_clipped_collection():
 @respx.mock
 def test_unauthorized_raises():
     respx.get(f"{RAINDROP_BASE}/collections").mock(
-        return_value=httpx.Response(
-            401, json={"result": False, "errorMessage": "unauthorized"}
-        )
+        return_value=httpx.Response(401, json={"result": False, "errorMessage": "unauthorized"})
     )
     with pytest.raises(RaindropError, match="unauth"):
         RaindropClient(

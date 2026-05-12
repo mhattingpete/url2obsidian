@@ -48,9 +48,7 @@ class RaindropClient:
         for item in data.get("items", []):
             out[item["title"]] = int(item["_id"])
         missing = [
-            n
-            for n in (self._inbox_name, self._clipped_name, self._failed_name)
-            if n not in out
+            n for n in (self._inbox_name, self._clipped_name, self._failed_name) if n not in out
         ]
         if missing:
             raise RaindropError(f"collections not found: {missing}")
