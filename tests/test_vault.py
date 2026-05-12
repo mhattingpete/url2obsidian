@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
+import httpx
 import pytest
+import respx
 
 from url2obsidian.models import Article, ItemMeta
 from url2obsidian.vault import FileVaultWriter, slugify
@@ -73,3 +75,61 @@ def test_write_collision_gives_up_after_ten(tmp_path: Path):
         writer.write(_article("Dup"), _meta(rid=i))
     with pytest.raises(RuntimeError, match="naming"):
         writer.write(_article("Dup"), _meta(rid=99))
+
+
+def test_write_downloads_images_when_enabled(tmp_path: Path):
+    article = Article(
+        title="With Image",
+        byline="",
+        content_markdown="Hello ![alt](https://img.example.com/pic.png) world",
+        published=None,
+        site_name="example.com",
+    )
+    with respx.mock:
+        respx.get("https://img.example.com/pic.png").mock(
+            return_value=httpx.Response(200, content=b"\x89PNG\r\n\x1a\n" + b"\x00" * 32)
+        )
+        writer = FileVaultWriter(
+            vault_path=tmp_path, clippings_subdir="Clippings", download_images=True
+        )
+        path = writer.write(article, _meta())
+    assert path.exists()
+    content = path.read_text()
+    assert "https://img.example.com" not in content
+    assert "_assets/with-image/pic.png" in content
+    assert (tmp_path / "Clippings" / "_assets" / "with-image" / "pic.png").exists()
+
+
+def test_write_image_download_failure_is_non_fatal(tmp_path: Path):
+    article = Article(
+        title="Broken Image",
+        byline="",
+        content_markdown="![](https://img.example.com/missing.png)",
+        published=None,
+        site_name="example.com",
+    )
+    with respx.mock:
+        respx.get("https://img.example.com/missing.png").mock(
+            return_value=httpx.Response(404)
+        )
+        writer = FileVaultWriter(
+            vault_path=tmp_path, clippings_subdir="Clippings", download_images=True
+        )
+        path = writer.write(article, _meta())
+    assert "https://img.example.com/missing.png" in path.read_text()
+
+
+def test_write_skips_images_when_disabled(tmp_path: Path):
+    article = Article(
+        title="Skip",
+        byline="",
+        content_markdown="![](https://img.example.com/p.png)",
+        published=None,
+        site_name="example.com",
+    )
+    writer = FileVaultWriter(
+        vault_path=tmp_path, clippings_subdir="Clippings", download_images=False
+    )
+    path = writer.write(article, _meta())
+    assert "https://img.example.com/p.png" in path.read_text()
+    assert not (tmp_path / "Clippings" / "_assets").exists()
