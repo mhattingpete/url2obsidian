@@ -42,6 +42,3 @@ launchctl load ~/Library/LaunchAgents/com.mhattingpete.url2obsidian.plist
 uv run url2obsidian clip https://some.article/url
 ```
 
-## Design
-
-See `docs/superpowers/specs/2026-05-12-url2obsidian-design.md`.
