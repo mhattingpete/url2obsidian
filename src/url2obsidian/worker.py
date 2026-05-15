@@ -20,7 +20,12 @@ def run_once(
     extractor: Extractor,
     vault: VaultWriter,
 ) -> None:
-    for item in inbox.list_pending():
+    try:
+        pending = list(inbox.list_pending())
+    except OSError as e:
+        log.warning("inbox_read_failed", errno=e.errno, error=str(e))
+        return
+    for item in pending:
         _process_one(item, inbox, fetcher, extractor, vault)
 
 
