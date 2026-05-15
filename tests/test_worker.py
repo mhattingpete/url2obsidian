@@ -1,3 +1,4 @@
+import errno
 from pathlib import Path
 
 import httpx
@@ -86,6 +87,27 @@ def test_empty_content_marks_failed(tmp_path: Path):
 
     run_once(inbox, fetcher, extractor, vault)
     assert [(i.url, r) for i, r in inbox.failed] == [(item.url, "empty")]
+
+
+def test_run_once_swallows_oserror_from_list_pending(tmp_path: Path):
+    """If the inbox read fails (e.g. iCloud EDEADLK), run_once returns cleanly."""
+
+    class BrokenInbox:
+        def list_pending(self):
+            raise OSError(errno.EDEADLK, "bird lock")
+
+        def mark_clipped(self, *_):  # pragma: no cover - never called
+            raise AssertionError
+
+        def mark_failed(self, *_):  # pragma: no cover - never called
+            raise AssertionError
+
+    fetcher = FakeFetcher({})
+    extractor = FakeExtractor({})
+    vault = FakeVault(tmp_path)
+
+    run_once(BrokenInbox(), fetcher, extractor, vault)  # must not raise
+    assert vault.written == []
 
 
 def test_one_item_failing_does_not_block_next(tmp_path: Path):
